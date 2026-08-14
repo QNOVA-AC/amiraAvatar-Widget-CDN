@@ -15,7 +15,7 @@
  * version.json + the baked fallback below. Keep it that way — any behavior
  * change here takes up to a week to reach returning visitors.
  *
- * widget-db0810107046.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-48ed48c44aec.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -29,7 +29,7 @@
     "https://raw.githubusercontent.com/QNOVA-AC/amiraAvatar-Widget-CDN/main/version.json";
   var BUNDLE_BASE =
     "https://cdn.jsdelivr.net/gh/QNOVA-AC/amiraAvatar-Widget-CDN@main/";
-  var FALLBACK_FILE = "widget-db0810107046.js";
+  var FALLBACK_FILE = "widget-48ed48c44aec.js";
 
   // The tag the host page wrote — carries data-amira-key / -mode / -token.
   var loaderTag =
