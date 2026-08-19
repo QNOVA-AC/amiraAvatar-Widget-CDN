@@ -20,7 +20,7 @@
  * usually have that bundle in HTTP cache; see the rollback note in
  * publish-cdn.cjs for the one case worth acting on.)
  *
- * widget-55ec6ce5e850.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-baf3f802d377.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -34,7 +34,7 @@
     "https://raw.githubusercontent.com/QNOVA-AC/amiraAvatar-Widget-CDN/main/version.json";
   var BUNDLE_BASE =
     "https://cdn.jsdelivr.net/gh/QNOVA-AC/amiraAvatar-Widget-CDN@main/";
-  var FALLBACK_FILE = "widget-55ec6ce5e850.js";
+  var FALLBACK_FILE = "widget-baf3f802d377.js";
 
   // The tag the host page wrote — carries data-amira-key / -mode / -token.
   var loaderTag =
