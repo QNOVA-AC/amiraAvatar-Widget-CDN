@@ -13,9 +13,14 @@
  * The loader itself is still browser-cached for 7 days, which is harmless
  * BECAUSE it is version-agnostic: all release-specific knowledge lives in
  * version.json + the baked fallback below. Keep it that way — any behavior
- * change here takes up to a week to reach returning visitors.
+ * change here takes up to a week to reach returning visitors. (One accepted
+ * bend: the preload below actively fetches the baked fallback, so a cached
+ * stale loader preloads a superseded bundle — a wasted hint + console
+ * warning, never a wrong execution. Cost is bounded: returning visitors
+ * usually have that bundle in HTTP cache; see the rollback note in
+ * publish-cdn.cjs for the one case worth acting on.)
  *
- * widget-0276161212a8.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-1867f47c0f4f.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -29,12 +34,36 @@
     "https://raw.githubusercontent.com/QNOVA-AC/amiraAvatar-Widget-CDN/main/version.json";
   var BUNDLE_BASE =
     "https://cdn.jsdelivr.net/gh/QNOVA-AC/amiraAvatar-Widget-CDN@main/";
-  var FALLBACK_FILE = "widget-0276161212a8.js";
+  var FALLBACK_FILE = "widget-1867f47c0f4f.js";
 
   // The tag the host page wrote — carries data-amira-key / -mode / -token.
   var loaderTag =
     document.currentScript || document.querySelector("script[data-amira-key]");
   if (!loaderTag) return;
+
+  // Warm the bundle path while version.json resolves: preconnect opens
+  // DNS+TLS to the bundle host, and preloading the baked fallback (== the
+  // current release at loader-publish time) downloads the bytes in PARALLEL
+  // with the version lookup instead of strictly after it. inject() then
+  // executes from the preload cache. A stale loader (version != fallback)
+  // simply ignores the preload - only inject() ever creates an executing
+  // script, so there is no double-execution risk. No crossorigin attribute
+  // on either hint: the injected <script> is classic/non-CORS and a
+  // mismatched preload mode would be ignored by the browser.
+  try {
+    var pc = document.createElement("link");
+    pc.rel = "preconnect";
+    pc.href = "https://cdn.jsdelivr.net";
+    document.head.appendChild(pc);
+    var pl = document.createElement("link");
+    pl.rel = "preload";
+    pl.as = "script";
+    pl.href = BUNDLE_BASE + FALLBACK_FILE;
+    // Nonce-CSP hosts: the preload is checked against script-src like the
+    // injected script — carry the same nonce or it 404s at the CSP layer.
+    if (loaderTag.nonce) pl.nonce = loaderTag.nonce;
+    document.head.appendChild(pl);
+  } catch (e) {}
 
   function inject(file) {
     if (timer) clearTimeout(timer); // resolved (or gave up) — disarm the abort guard
