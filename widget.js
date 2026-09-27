@@ -34,7 +34,7 @@
  * console warning, never a wrong execution. See the rollback note in
  * publish-cdn.cjs for the one case worth acting on.)
  *
- * widget-ad38c459ab98.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-97a25d59bdcf.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -52,7 +52,7 @@
     BUNDLE_BASE + "version.json",
     "https://raw.githubusercontent.com/" + CDN_REPO + "/main/version.json"
   ];
-  var FALLBACK_FILE = "widget-ad38c459ab98.js";
+  var FALLBACK_FILE = "widget-97a25d59bdcf.js";
   var LKG_KEY = "amira_widget_bundle"; // last-known-good bundle for THIS browser
   var VALID = /^widget-[\w.-]+\.js$/;
 
@@ -60,6 +60,71 @@
   var loaderTag =
     document.currentScript || document.querySelector("script[data-amira-key]");
   if (!loaderTag) return;
+
+  // Docked layout: a column that was open on the previous page keeps its
+  // place from the first paint when this tag sits in <head>, drawn as the
+  // visitor left it (colours, brand frame, the avatar's image in the card).
+  // A replay of what the bundle wrote on pagehide (src/ui/side-dock.js —
+  // keep the CSS identical); the bundle takes it over or drops it when it
+  // starts, and its load/error drops it if nothing claimed it (an older
+  // bundle, a failed download). Never allowed to stop the bundle loading.
+  var SIDE_STYLE = "aw-side-reserve";
+  var sideHeld = false;
+  function dropSide() {
+    try {
+      if (window.__amiraSideClaimed) return;
+      var el = document.getElementById(SIDE_STYLE);
+      if (el && el.parentNode) el.parentNode.removeChild(el);
+      document.documentElement.removeAttribute("data-aw-side");
+    } catch (e) {}
+  }
+  try {
+    var rec = JSON.parse(window.sessionStorage.getItem("avatar_side_dock") || "null");
+    var sd = rec && rec.v === 1 && (rec.side === "left" || rec.side === "right") ? rec.side : null;
+    var sw = rec ? Math.round(Number(rec.w)) : 0;
+    var room = (document.documentElement.clientWidth || window.innerWidth || 0) - sw;
+    if (sd && sw >= 120 && sw <= 1000 && rec.t && Date.now() - rec.t <= 40000 && room >= 960 &&
+        !document.getElementById(SIDE_STYLE)) {
+      var bg = typeof rec.bg === "string" ? rec.bg.replace(/^\s+|\s+$/g, "") : "";
+      if (!/^(#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\))$/i.test(bg)) bg = "#fff";
+      var p = typeof rec.p === "string" ? rec.p.replace(/^\s+|\s+$/g, "") : "";
+      if (!/^\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}$/.test(p)) p = "";
+      // The card: [x, y, width, height, radius] within the column.
+      var c = Array.isArray(rec.card) && rec.card.length === 5
+        ? [0, 1, 2, 3, 4].map(function (k) { return Math.round(Number(rec.card[k])); })
+        : null;
+      if (c && !(c.every(isFinite) && c[0] >= 0 && c[1] >= 0 && c[2] > 0 && c[3] > 0 &&
+          c[0] + c[2] <= sw && c[3] <= 3000 && c[4] >= 0 && c[4] <= 200)) c = null;
+      var img = c && typeof rec.img === "string" && /^https:\/\/[^\s"'()\\<>]{1,900}$/.test(rec.img) ? rec.img : "";
+      var frame = c ? c[1] + c[3] : 0;
+      var grad = p && frame
+        ? "linear-gradient(180deg,rgba(" + p + ",1) 0,rgba(" + p + ",.6) " + frame / 2 + "px,rgba(" + p + ",0) " + frame + "px),"
+        : "";
+      var css =
+        "html:root{margin-" + sd + ":" + sw + "px!important;width:auto!important;" +
+        "--aw-side-width:" + sw + "px;--aw-side-" + sd + ":" + sw + "px}" +
+        "@media print{html:root{margin-" + sd + ":0!important}}" +
+        "html:root::after{all:initial!important;content:\"\"!important;position:fixed!important;top:0!important;bottom:0!important;" +
+        sd + ":0!important;width:" + sw + "px!important;z-index:2147483645!important;pointer-events:none!important;" +
+        "background:" + grad + bg + "!important}";
+      if (c) {
+        var x = sd === "left" ? c[0] : sw - c[0] - c[2];
+        css +=
+          "html:root::before{all:initial!important;content:\"\"!important;position:fixed!important;top:" + c[1] + "px!important;" +
+          sd + ":" + x + "px!important;width:" + c[2] + "px!important;height:" + c[3] + "px!important;border-radius:" + c[4] + "px!important;" +
+          "z-index:2147483646!important;pointer-events:none!important;" +
+          "background:rgba(127,127,127,.18)" + (img ? " url(\"" + img + "\") center/cover no-repeat" : "") + "!important}";
+      }
+      css += "@media print{html:root::after,html:root::before{display:none!important}}";
+      var st = document.createElement("style");
+      st.id = SIDE_STYLE;
+      st.textContent = css;
+      (document.head || document.documentElement).appendChild(st);
+      document.documentElement.setAttribute("data-aw-side", sd);
+      sideHeld = true;
+      setTimeout(dropSide, 15000);
+    }
+  } catch (e) {}
 
   function readLKG() {
     try {
@@ -112,6 +177,8 @@
       if (a.name.indexOf("data-") === 0) s.setAttribute(a.name, a.value);
     }
     if (loaderTag.nonce) s.nonce = loaderTag.nonce;
+    s.addEventListener("load", dropSide);
+    s.addEventListener("error", dropSide);
     document.head.appendChild(s);
   }
 
@@ -148,6 +215,10 @@
       return v.file;
     });
   }
+
+  // A held column: the bundle this browser ran on the page it comes from
+  // starts at once; the lookup below only refreshes the record.
+  if (sideHeld && lkg) inject(lkg);
 
   lookup(VERSION_URLS[0], 2500)
     .catch(function () { return lookup(VERSION_URLS[1], 2500); })
