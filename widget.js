@@ -34,7 +34,7 @@
  * console warning, never a wrong execution. See the rollback note in
  * publish-cdn.cjs for the one case worth acting on.)
  *
- * widget-40f87f818e24.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-43582818fb81.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -52,7 +52,7 @@
     BUNDLE_BASE + "version.json",
     "https://raw.githubusercontent.com/" + CDN_REPO + "/main/version.json"
   ];
-  var FALLBACK_FILE = "widget-40f87f818e24.js";
+  var FALLBACK_FILE = "widget-43582818fb81.js";
   var LKG_KEY = "amira_widget_bundle"; // last-known-good bundle for THIS browser
   var VALID = /^widget-[\w.-]+\.js$/;
 
@@ -83,7 +83,8 @@
     var sd = rec && rec.v === 1 && (rec.side === "left" || rec.side === "right") ? rec.side : null;
     var sw = rec ? Math.round(Number(rec.w)) : 0;
     var room = (document.documentElement.clientWidth || window.innerWidth || 0) - sw;
-    if (sd && sw >= 120 && sw <= 1000 && rec.t && Date.now() - rec.t <= 40000 && room >= 960 &&
+    // 640: side-dock.js MIN_PAGE_PX, the width the page keeps.
+    if (sd && sw >= 120 && sw <= 1000 && rec.t && Date.now() - rec.t <= 40000 && room >= 640 &&
         !document.getElementById(SIDE_STYLE)) {
       var bg = typeof rec.bg === "string" ? rec.bg.replace(/^\s+|\s+$/g, "") : "";
       if (!/^(#[0-9a-f]{3,8}|rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\))$/i.test(bg)) bg = "#fff";
