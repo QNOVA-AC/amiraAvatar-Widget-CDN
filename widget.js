@@ -34,7 +34,7 @@
  * console warning, never a wrong execution. See the rollback note in
  * publish-cdn.cjs for the one case worth acting on.)
  *
- * widget-0a128f27abb9.js is replaced by scripts/publish-cdn.cjs at publish time
+ * widget-f8a52f53130a.js is replaced by scripts/publish-cdn.cjs at publish time
  * with the bundle filename being published, so a failed/blocked version fetch
  * degrades to "the release current at loader-publish time", never to nothing.
  */
@@ -52,7 +52,7 @@
     BUNDLE_BASE + "version.json",
     "https://raw.githubusercontent.com/" + CDN_REPO + "/main/version.json"
   ];
-  var FALLBACK_FILE = "widget-0a128f27abb9.js";
+  var FALLBACK_FILE = "widget-f8a52f53130a.js";
   var LKG_KEY = "amira_widget_bundle"; // last-known-good bundle for THIS browser
   var VALID = /^widget-[\w.-]+\.js$/;
 
